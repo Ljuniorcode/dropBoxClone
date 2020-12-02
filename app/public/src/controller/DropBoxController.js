@@ -7,7 +7,8 @@ class DropBoxController {
 
     this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg')//classe da barra de progresso
     this.namefileEl = this.snackModalEl.querySelector('.filename')//nome do arquivo do upload
-    this.timeleftEl = this.snackModalEl.querySelector('.timeleft')
+    this.timeleftEl = this.snackModalEl.querySelector('.timeleft')//tempo 
+
 
 
     this.initEvents();
@@ -26,11 +27,18 @@ class DropBoxController {
       //seleciona  método que busca vários arquivos qdo clica na tag input
       this.uploadTask(event.target.files)
 
-      //exibe via css do bootstrap na  página
-      this.snackModalEl.style.display = 'block'
+      this.modalShow()
+
+      this.inputFilesEl.value = ''
 
     })
   }
+
+  //método que exibe
+  modalShow(show = true) {
+    snackModalEl.style.display = (show) ? 'block' : 'none'
+  }
+
 
   //recebe os arquivos para upload
   uploadTask(files) {
@@ -38,6 +46,7 @@ class DropBoxController {
 
     //o ...files é usad p/ expandir a qtd de parâmetros, pode ser um ou vários
     [...files].forEach(file => {
+
       promises.push(new Promise((resolve, reject) => {
 
         let ajax = new XMLHttpRequest() //criar uma variavel para abrir conexão
@@ -45,6 +54,9 @@ class DropBoxController {
 
         //criando evento para saber se deu certo ou n
         ajax.onload = event => {
+
+          this.modalShow(false)
+
           try {
             resolve(JSON.parse(ajax.responseText))
           } catch (e) {
@@ -53,15 +65,15 @@ class DropBoxController {
         }
 
         //se der um erro logo de início, esse reject será retornado
-        ajax.error = event => {
+        ajax.onerror = event => {
+
+          this.modalShow(false)
           reject(event)
         }
 
         //trabalhando com a barra de progresso
         ajax.upload.onprogress = event => {
           this.uploadProgress(event, file)
-
-
 
         }
 
@@ -75,7 +87,6 @@ class DropBoxController {
 
         ajax.send(formData)//variável tratada e pronto para ser enviado
 
-
       }))
     })
 
@@ -86,16 +97,37 @@ class DropBoxController {
   //método da barra de progresso
   uploadProgress(event, file) {
     let timespent = Date.now() - this.startUploadTime
+
     let loaded = event.loaded
     let total = event.total
     let porcent = parseInt((loaded / total) * 100) //converte em um nº inteiro
+
     let timeleft = ((100 - porcent) * timespent) / porcent
 
     this.progressBarEl.style.width = `${porcent}%`
 
     this.namefileEl.innerHTML = file.name
-    this.timeleftEl.innerHTML = ''
+    this.timeleftEl.innerHTML = this.formatTimeToHuman(timeleft)
 
+    console.log(timespent, timeleft, porcent)
+  }
+
+  formatTimeToHuman(duration) {
+    let seconds = parseInt((duration / 1000) % 60)
+    let minutes = parseInt((duration / (1000 * 60)) % 60)
+    let hours = parseInt((duration / (1000 * 60 * 60)) % 24)
+
+    if (hours > 0) {
+      return `${hours} horas, ${minutes} minutos e ${seconds} segundos`
+    }
+
+    if (minutes > 0) {
+      return `${minutes} minutos e ${seconds} segundos`
+    }
+
+    if (seconds > 0) {
+      return ` ${seconds} segundos`
+    }
   }
 }
 
