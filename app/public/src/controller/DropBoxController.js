@@ -9,9 +9,26 @@ class DropBoxController {
     this.namefileEl = this.snackModalEl.querySelector('.filename')//nome do arquivo do upload
     this.timeleftEl = this.snackModalEl.querySelector('.timeleft')//tempo 
 
-
+    this.connectFirebase()
 
     this.initEvents();
+  }
+
+  connectFirebase() {
+
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyAEdhflMNB03qT5CXrgVShXzYJxpmdWaqo",
+      authDomain: "dropbox-clone-c771a.firebaseapp.com",
+      databaseURL: "https://dropbox-clone-c771a-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "dropbox-clone-c771a",
+      storageBucket: "dropbox-clone-c771a.appspot.com",
+      messagingSenderId: "53046815339",
+      appId: "1:53046815339:web:7ceeb0e863cce359d99f2e"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+
   }
 
   //inicializa os eventos de clique e mudança ao selecionar os arquivos
@@ -24,19 +41,54 @@ class DropBoxController {
     //add evento de mudança nos arquivos alvos
     this.inputFilesEl.addEventListener('change', event => {
 
+      //travar o botão enquanto envia o arquivo
+      this.btnSendFileEl.disabled = true
+
       //seleciona  método que busca vários arquivos qdo clica na tag input
-      this.uploadTask(event.target.files)
+      this.uploadTask(event.target.files).then(responses => {
+
+        responses.forEach(resp => {
+
+
+          this.getFirebaseRef().push().set(resp.files['input-file'])
+
+        })
+
+        this.uploadComplete()
+
+      }).catch(err => {
+        this.uploadComplete()
+        console.log(err)
+
+      })
+
+
 
       this.modalShow()
 
-      this.inputFilesEl.value = ''
+
 
     })
   }
 
+  uploadComplete() {
+    this.modalShow(false)
+    this.inputFilesEl.value = ''
+    this.btnSendFileEl.disabled = false
+
+
+  }
+
+  //método que envia as informações do arquivo para o firebase
+  getFirebaseRef() {
+
+    return firebase.database().ref('files');
+
+  }
+
   //método que exibe
   modalShow(show = true) {
-    snackModalEl.style.display = (show) ? 'block' : 'none'
+    this.snackModalEl.style.display = (show) ? 'block' : 'none'
   }
 
 
@@ -55,8 +107,6 @@ class DropBoxController {
         //criando evento para saber se deu certo ou n
         ajax.onload = event => {
 
-          this.modalShow(false)
-
           try {
             resolve(JSON.parse(ajax.responseText))
           } catch (e) {
@@ -67,7 +117,6 @@ class DropBoxController {
         //se der um erro logo de início, esse reject será retornado
         ajax.onerror = event => {
 
-          this.modalShow(false)
           reject(event)
         }
 
