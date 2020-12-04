@@ -1,6 +1,9 @@
 class DropBoxController {
 
   constructor() {
+
+    this.onselectionchange = new Event('selectionchange')
+
     this.btnSendFileEl = document.querySelector('#btn-send-file') //selecionou o botão
     this.inputFilesEl = document.querySelector('#files') //pega o id do input do botão p/ ler arq.
     this.snackModalEl = document.querySelector('#react-snackbar-root') //barra de progresso
@@ -183,7 +186,7 @@ class DropBoxController {
 
   getFileIconView() {
 
-
+    //teste 01
     switch (files.type) {
       case 'folder':
         return `
@@ -361,6 +364,8 @@ class DropBoxController {
       </li>    
     `
 
+    this.initEventsLi(li)
+
     return li
   }
 
@@ -380,5 +385,51 @@ class DropBoxController {
       })
     })
   }
+
+  initEventsLi(li) {
+    li.addEventListener('click', e => {
+
+      this.onselectionchange = new Event('selectionchange')
+
+      this.listFilesEl.dispatchEvent(this.onselectionchange)
+
+
+
+      if (e.shiftKey) {
+        let firstiLi = this.listFilesEl.querySelector('selected')
+
+        if (firstiLi) {
+
+          let indexStart;
+          let indexEnd;
+          let lis = li.parentElement.childNodes;
+
+          lis.forEach((el, index) => {
+            if (firstiLi === el) indexStart = index
+            if (li === el) indexEnd = index
+          })
+
+          let index = [indexStart, indexEnd].sort()
+
+          lis.forEach((el, i) => {
+            if (i >= index[0] && i <= index[1]) {
+              el.classList.add('selected')
+            }
+          })
+
+          return true
+        }
+      }
+
+      if (!e.ctrlKey) {
+        this.listFilesEl.querySelectorAll('li.selected').forEach(el => {
+          el.classList.remove('selected')
+        })
+      }
+
+      li.classList.toggle('selected')
+    })
+  }
+
 }
 
